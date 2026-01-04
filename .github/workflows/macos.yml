@@ -37,7 +37,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         submodules: recursive
@@ -102,7 +102,7 @@ jobs:
         cat Rufus-*.dmg.sha256
 
     - name: Upload DMG artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: github.event_name == 'push'
       with:
         name: macOS-Intel-DMG
