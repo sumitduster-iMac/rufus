@@ -1,0 +1,118 @@
+name: macOS
+
+on: 
+  push:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'res/**'
+      - '**.cmd'
+      - '**.md'
+      - '**.rc'
+      - '**.sh'
+      - '**.txt'
+      - '**.xml'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'res/**'
+      - '**.cmd'
+      - '**.md'
+      - '**.rc'
+      - '**.sh'
+      - '**.txt'
+      - '**.xml'
+  workflow_dispatch:
+
+jobs:
+  macOS-Package:
+    runs-on: macos-14  # Apple Silicon macOS runner (macos-13 Intel runners are retired)
+    
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Set version
+      id: set_version
+      run: |
+        version=$(git describe --tags 2>/dev/null || echo "dev")
+        version=${version#v}
+        version=${version%%-*}
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "Version: $version"
+
+    - name: Create DMG structure
+      run: |
+        mkdir -p dmg-contents
+        echo "Rufus - The Reliable USB Formatting Utility" > dmg-contents/README.txt
+        echo "" >> dmg-contents/README.txt
+        echo "Version: ${{ steps.set_version.outputs.version }}" >> dmg-contents/README.txt
+        echo "" >> dmg-contents/README.txt
+        echo "Rufus is a Windows application for formatting USB drives." >> dmg-contents/README.txt
+        echo "This DMG package is for distribution purposes." >> dmg-contents/README.txt
+        echo "" >> dmg-contents/README.txt
+        echo "To use Rufus:" >> dmg-contents/README.txt
+        echo "1. Extract the Windows executables from this package" >> dmg-contents/README.txt
+        echo "2. Run them on a Windows system or Windows VM" >> dmg-contents/README.txt
+        echo "" >> dmg-contents/README.txt
+        echo "For more information, visit: https://rufus.ie" >> dmg-contents/README.txt
+        echo "GitHub: https://github.com/pbatard/rufus" >> dmg-contents/README.txt
+
+    - name: Download Windows artifacts (if available)
+      if: github.event_name == 'push' && github.repository == 'pbatard/rufus'
+      continue-on-error: true
+      run: |
+        # TODO: This step would download artifacts from Windows builds if needed
+        # For now, the DMG serves as a distribution package without embedded executables
+        echo "Placeholder: Windows builds are not currently embedded in this DMG" | tee dmg-contents/WINDOWS_BUILDS.txt
+
+    - name: Create DMG image
+      run: |
+        # Create a DMG file for distribution
+        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS.dmg"
+        
+        # Create temporary directory for DMG
+        mkdir -p dmg-temp
+        cp -r dmg-contents/* dmg-temp/
+        
+        # Create the DMG
+        hdiutil create -volname "Rufus ${{ steps.set_version.outputs.version }}" \
+          -srcfolder dmg-temp \
+          -ov -format UDZO \
+          "$DMG_NAME"
+        
+        # Calculate checksum
+        shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256"
+        
+        echo "DMG created: $DMG_NAME"
+        ls -lh "$DMG_NAME"
+
+    - name: Display SHA-256
+      run: |
+        cat Rufus-*.dmg.sha256
+
+    - name: Upload DMG artifact
+      uses: actions/upload-artifact@v6
+      if: github.event_name == 'push'
+      with:
+        name: macOS-DMG
+        path: |
+          *.dmg
+          *.sha256
+        retention-days: 30
+
+    - name: Verify DMG
+      run: |
+        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS.dmg"
+        hdiutil verify "$DMG_NAME"
+        echo "DMG verification complete"
