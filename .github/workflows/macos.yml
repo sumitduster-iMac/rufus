@@ -31,6 +31,9 @@ on:
 jobs:
   macOS-Package:
     runs-on: macos-13  # Intel-based macOS runner
+    
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout repository
