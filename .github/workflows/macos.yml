@@ -16,6 +16,7 @@ on:
   pull_request:
     branches: [master]
     paths-ignore:
+      - '.github/ISSUE_TEMPLATE/**'
       - '.gitignore'
       - '.gitattributes'
       - 'res/**'
@@ -68,8 +69,8 @@ jobs:
       if: github.event_name == 'push' && github.repository == 'pbatard/rufus'
       continue-on-error: true
       run: |
-        # This step would download artifacts from Windows builds if they exist
-        # For now, we'll create a placeholder
+        # TODO: This step would download artifacts from Windows builds if needed
+        # For now, the DMG serves as a distribution package without embedded executables
         echo "Windows builds would be included here" > dmg-contents/WINDOWS_BUILDS.txt
 
     - name: Create DMG image
