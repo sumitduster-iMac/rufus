@@ -30,7 +30,7 @@ on:
 
 jobs:
   macOS-Package:
-    runs-on: macos-13  # Intel-based macOS runner
+    runs-on: macos-14  # Apple Silicon macOS runner (macos-13 Intel runners are retired)
     
     permissions:
       contents: read
@@ -74,12 +74,12 @@ jobs:
       run: |
         # TODO: This step would download artifacts from Windows builds if needed
         # For now, the DMG serves as a distribution package without embedded executables
-        echo "Windows builds would be included here" > dmg-contents/WINDOWS_BUILDS.txt
+        echo "Placeholder: Windows builds are not currently embedded in this DMG" | tee dmg-contents/WINDOWS_BUILDS.txt
 
     - name: Create DMG image
       run: |
         # Create a DMG file for distribution
-        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS-Intel.dmg"
+        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS.dmg"
         
         # Create temporary directory for DMG
         mkdir -p dmg-temp
@@ -105,7 +105,7 @@ jobs:
       uses: actions/upload-artifact@v6
       if: github.event_name == 'push'
       with:
-        name: macOS-Intel-DMG
+        name: macOS-DMG
         path: |
           *.dmg
           *.sha256
@@ -113,6 +113,6 @@ jobs:
 
     - name: Verify DMG
       run: |
-        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS-Intel.dmg"
+        DMG_NAME="Rufus-${{ steps.set_version.outputs.version }}-macOS.dmg"
         hdiutil verify "$DMG_NAME"
         echo "DMG verification complete"
